@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Generation and Summarization</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Custom CSS for styling -->
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            font-size: 23px; 
+        }
+        body {
+            position: relative; 
+            overflow: hidden; 
+        }
+        video#bgVideo {
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; 
+            z-index: -1; 
+        }
+        .container {
+            position: relative;
+            max-width: 1500px;
+            background-color: rgba(255, 255, 255, 0.777); 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 50px;
+            border-radius: 8px;
+            z-index: 1; 
+        }
+        #chatHistoryPanel, #summarizationHistoryPanel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .history-content {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            background-color: rgb(241, 233, 233);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .history-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        .close-history {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: rgba(255, 0, 0, 0.2); 
+            color: #ff0000; 
+            border: 1px solid #ff0000; 
+            border-radius: 5px; 
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .close-history:hover {
+            background-color: rgba(255, 0, 0, 0.4); 
+            color: #fff; 
+            text-decoration: underline; 
+        }
+        .text-generation, .text-summarization {
+            display: none;
+        }
+        .btn-group {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+        h1 {
+            font-size: 2em; 
+        }
+        label, textarea, select, button {
+            font-size: 1em; 
+        }
+
+        textarea:focus, select:focus, button:focus, input:focus {
+            background-color: #fcfcfc; 
+            outline: none; 
+            border: 5px solid #272525; 
+        }
+        
+        #summarizedText {
+            background-color: #303331; 
+            color: #fff; 
+            padding: 10px; 
+            border-radius: 5px; 
+            margin-top: 20px; 
+        }
+
+        #chatHistory {
+            height: 300px; 
+            overflow-y: auto; 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            background-color: #e0dada; 
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 30px;
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            color: #fff; 
+            font-size: 2.5em; 
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); 
+        }
+        .section-title-small {
+            font-size: 1.5em; 
+            margin-top: 10px; 
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); 
+        }
+
+        .left-sidebar, .right-sidebar {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 999; 
+        }
+        .left-sidebar {
+            left: 5px;
+        }
+        .right-sidebar {
+            right: 5px;
+        }
+        .sidebar-button {
+            background-color: #3d1147; 
+            color: #fff; 
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+        .sidebar-button:hover {
+            background-color: #0056b3; 
+        }
+    </style>
+</head>
+<body>
+
+    <video id="bgVideo" autoplay muted loop>
+        <source src="{% static 'bgvideo.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="container">
+        <h1 class="text-center mb-4">Text Generation and Summarization</h1>
+        <div class="btn-group mb-3">
+            <button type="button" class="btn btn-primary" id="btnTextGeneration">Text Generation</button>
+            <button type="button" class="btn btn-primary" id="btnTextSummarization">Text Summarization</button>
+        </div>
+
+        <!-- Text Generation section -->
+        <div class="text-generation">
+            <div class="form-group">
+                <label for="modelSelect">Select Model:</label>
+                <select class="form-control" id="modelSelect">
+                    <option value="Meta-Llama-3">Meta-Llama-3</option>
+                    <option value="falcon-7">falcon-7</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="userInput">Your Message:</label>
+                <textarea class="form-control" id="userInput" rows="3"></textarea>
+            </div>
+            <button id="sendMessage" class="btn btn-primary btn-block mb-3">Send</button>
+            <div id="chatHistory" class="border rounded p-2 mb-2"></div>
+        </div>
+
+        <!-- Text Summarization section -->
+        <div class="text-summarization">
+            <div class="form-group">
+                <label for="userInputSummarization">Enter Text for Summarization:</label>
+                <textarea class="form-control" id="userInputSummarization" rows="6"></textarea>
+            </div>
+            <button id="btnProceedSummarization" class="btn btn-primary btn-block mb-3">Proceed</button>
+            <div id="summarizedText" class="mb-3"></div>
+        </div>
+    </div>
+
+    <!-- History Panels -->
+    <div id="chatHistoryPanel">
+        <div class="history-content">
+            <div class="history-header">
+                <h3>Text Generation History</h3>
+                <span id="closeChatHistory" class="close-history">Close</span>
+            </div>
+            <div id="chatHistoryContent"></div>
+        </div>
+    </div>
+
+    <div id="summarizationHistoryPanel">
+        <div class="history-content">
+            <div class="history-header">
+                <h3>Text Summarization History</h3>
+                <span id="closeSummarizationHistory" class="close-history">Close</span>
+            </div>
+            <div id="summarizationHistoryContent"></div>
+        </div>
+    </div>
+
+    <!-- Left sidebar button for Text Generation History -->
+    <div class="left-sidebar">
+        <button id="btnViewGenerationHistory" class="sidebar-button">View Text Generation History</button>
+    </div>
+
+    <!-- Right sidebar button for Text Summarization History -->
+    <div class="right-sidebar">
+        <button id="btnViewSummarizationHistory" class="sidebar-button">View Text Summarization History</button>
+    </div>
+
+    <!-- Clear button -->
+    <div class="text-center mt-3">
+        <button id="clearButton" class="btn btn-danger">Clear</button>
+    </div>
+
+    <!-- jQuery for AJAX requests -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        $(document).ready(function() {
+           
+            $('#btnTextGeneration').click(function() {
+                $('.text-summarization').hide();
+                $('.text-generation').show();
+            });
+
+            $('#btnTextSummarization').click(function() {
+                $('.text-generation').hide();
+                $('.text-summarization').show();
+            });
+
+          
+            $('#btnViewGenerationHistory').click(function() {
+                $('#chatHistoryPanel').show();
+            });
+
+         
+            $('#btnViewSummarizationHistory').click(function() {
+                $('#summarizationHistoryPanel').show();
+            });
+
+          
+            $('#closeChatHistory').click(function() {
+                $('#chatHistoryPanel').hide();
+            });
+
+            $('#closeSummarizationHistory').click(function() {
+                $('#summarizationHistoryPanel').hide();
+            });
+
+         
+            $('#sendMessage').click(function() {
+                var model_name = $('#modelSelect').val();
+                var user_input = $('#userInput').val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/api/chat/',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        model_name: model_name,
+                        user_input: user_input,
+                        user_id: 'your_user_id_here'  
+                    }),
+                    success: function(response) {
+                        var message = '<div class="border rounded p-2 mb-2 user-message"><strong>You:</strong> ' + user_input + '</div>';
+                        var modelMessage = '<div class="border rounded p-2 mb-2 model-message"><strong>Model:</strong> ' + response.response + '</div>';
+                        
+                        $('#chatHistory').prepend(modelMessage);
+                        $('#chatHistory').prepend(message);
+
+                        $('#chatHistoryContent').prepend(modelMessage);
+                        $('#chatHistoryContent').prepend(message);
+
+                        $('#userInput').val('');
+                    },
+                    error: function(error) {
+                        console.error('Error:', error);
+                        var errorMessage = '<div class="border rounded p-2 mb-2 text-white error-message"><strong>Error:</strong> ' + error.responseText + '</div>';
+                        $('#chatHistory').prepend(errorMessage);
+                        $('#chatHistoryContent').prepend(errorMessage);
+                    }
+                });
+            });
+
+            $('#btnProceedSummarization').click(function() {
+                var user_input = $('#userInputSummarization').val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/api/summarize_text/',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        user_input: user_input,
+                    }),
+                    success: function(response) {
+                        var inputMessage = '<div class="border rounded p-2 mb-2 user-message"><strong>Your Text:</strong> ' + user_input + '</div>';
+                        var summaryMessage = '<div class="border rounded p-2 mb-2 model-message"><strong>Summary:</strong> ' + response.summary + '</div>';
+                        
+                        var historyEntry = inputMessage + summaryMessage;
+                        
+                        $('#summarizationHistoryContent').prepend(historyEntry);
+
+                        $('#summarizedText').html('<strong>Summarized Text:</strong><br>' + response.summary);
+                        $('#userInputSummarization').val('');
+                    },
+                    error: function(error) {
+                        console.error('Error:', error);
+                        var errorMessage = '<div class="border rounded p-2 mb-2 text-white error-message"><strong>Error:</strong> ' + error.responseText + '</div>';
+                        $('#summarizedText').html(errorMessage);
+                        $('#summarizationHistoryContent').prepend(errorMessage);
+                    }
+                });
+            });
+
+            $('#clearButton').click(function() {
+                $('#userInput').val('');
+                $('#userInputSummarization').val('');
+                $('#chatHistory').empty(); 
+                $('#summarizedText').empty(); 
+            });
+        });
+    </script>
+</body>
+</html>
