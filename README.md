@@ -12,11 +12,11 @@ This project is a web application that allows users to perform text generation a
 - **Text Summarization:**
   - Input text for summarization.
   - Receive summarized output.
-  - View and clear summarization history.
+  - View and clear summarization of history.
 
 - **History Panels:**
   - View detailed history for both text generation and summarization.
-  - Close panels to focus on main application.
+  - Close panels to focus on the main application.
 
 ## Technologies Used
 
@@ -114,14 +114,11 @@ To run the project locally, follow these steps:
 
 - Ensure proper internet connectivity for model interactions.
 - Adjust configurations (`settings.py`) for production deployment.
-- Customize frontend styling and functionality as needed.
+- Customize front-end styling and functionality as needed.
 
 ## Contributing
 
 Contributions are welcome! Please fork the repository and create a pull request with your improvements.
 
-## License
-
-This project is licensed under the [MIT License](LICENSE).
 
 ---
